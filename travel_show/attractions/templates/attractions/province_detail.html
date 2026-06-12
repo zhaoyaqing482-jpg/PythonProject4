@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ province }} - 旅游城市</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #0b1121;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+
+        /* 返回按钮 + 标题 */
+        .header {
+            margin-bottom: 32px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 16px;
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .back-link:hover {
+            color: #93c5fd;
+            transform: translateX(-2px);
+        }
+        .province-title {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #60a5fa, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .sub {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        /* 城市卡片网格 */
+        .city-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .city-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+        .city-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(96, 165, 250, 0.5);
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .city-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: #1e293b;
+            transition: transform 0.4s;
+        }
+        .city-card:hover .city-image {
+            transform: scale(1.05);
+        }
+
+        .city-info {
+            padding: 18px 16px 20px;
+        }
+        .city-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #f1f5f9;
+        }
+        .city-stats {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .city-stats span {
+            background: rgba(96, 165, 250, 0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .empty-img {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            font-size: 14px;
+        }
+
+        /* 无数据 */
+        .no-data {
+            text-align: center;
+            padding: 60px;
+            color: #475569;
+            background: rgba(30, 41, 59, 0.4);
+            border-radius: 24px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="/" class="back-link">← 返回全国地图</a>
+        <div class="province-title">{{ province }}</div>
+        <div class="sub">共 {{ city_list|length }} 个城市 · 推荐各城代表景点</div>
+    </div>
+
+    <div class="city-grid">
+        {% for city in city_list %}
+        <a href="/city/{{ city.name }}/" class="city-card">
+            {% if city.image %}
+            <img class="city-image" src="{{ city.image }}" alt="{{ city.name }}" onerror="this.parentElement.querySelector('.empty-img').style.display='flex'; this.style.display='none'">
+            <div class="empty-img" style="display: none;">📷 暂无图片</div>
+            {% else %}
+            <div class="empty-img">🏞️ 即将上架</div>
+            {% endif %}
+            <div class="city-info">
+                <div class="city-name">{{ city.name }}</div>
+                <div class="city-stats">
+                    <span>🗺️ {{ city.count }} 个景点</span>
+                </div>
+            </div>
+        </a>
+        {% empty %}
+        <div class="no-data">暂无城市数据</div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>

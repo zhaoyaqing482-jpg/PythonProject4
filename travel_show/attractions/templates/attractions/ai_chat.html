@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 旅游助手 - 中国旅游大数据平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0b1121;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(96, 165, 250, 0.2);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .chat-header .back {
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .chat-header h1 {
+            font-size: 20px;
+            color: white;
+            font-weight: 600;
+        }
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 85%;
+        }
+        .user-message {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .bubble {
+            background: #1e293b;
+            padding: 12px 16px;
+            border-radius: 18px;
+            border-top-left-radius: 4px;
+            color: #e2e8f0;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .user-message .bubble {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border-top-right-radius: 4px;
+            border-top-left-radius: 18px;
+            color: white;
+        }
+        .thinking .bubble {
+            background: #1e293b;
+            color: #94a3b8;
+        }
+        .input-area {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(96, 165, 250, 0.2);
+            padding: 16px 20px;
+            display: flex;
+            gap: 12px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .input-area input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 40px;
+            padding: 12px 18px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+        .input-area button {
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+            border: none;
+            border-radius: 40px;
+            padding: 0 24px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .input-area button:hover {
+            transform: scale(1.02);
+        }
+        .example-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            padding: 12px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .example-chip {
+            background: rgba(96, 165, 250, 0.15);
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .example-chip:hover {
+            background: rgba(96, 165, 250, 0.3);
+        }
+        /* Markdown 样式 */
+        .bubble h1, .bubble h2, .bubble h3 {
+            margin: 8px 0 4px;
+        }
+        .bubble p {
+            margin: 4px 0;
+        }
+        .bubble ul, .bubble ol {
+            margin: 4px 0 4px 20px;
+        }
+        .bubble li {
+            margin: 2px 0;
+        }
+        .bubble code {
+            background: #0f172a;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .bubble a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-header">
+        <a href="/" class="back">← 返回首页</a>
+        <h1>🤖 AI 旅游助手</h1>
+    </div>
+    <div class="chat-container" id="chat-container">
+        <div class="message">
+            <div class="avatar">🤖</div>
+            <div class="bubble">你好！我是你的专属旅游顾问，可以帮你规划路线、推荐景点、介绍美食。试试在下面提问吧！</div>
+        </div>
+    </div>
+    <div class="example-questions">
+        <span class="example-chip" data-q="推荐广东景点">🏞️ 广东景点推荐</span>
+        <span class="example-chip" data-q="北京免费景点">🏛️ 北京免费景点</span>
+        <span class="example-chip" data-q="海边旅游推荐">🌊 海边城市</span>
+        <span class="example-chip" data-q="亲子游推荐">👨‍👩‍👧 亲子游</span>
+        <span class="example-chip" data-q="成都三日游攻略">🐼 成都三日游</span>
+    </div>
+    <div class="input-area">
+        <input type="text" id="question-input" placeholder="输入你的问题..." autofocus>
+        <button id="send-btn">发送</button>
+    </div>
+
+    <script>
+        const container = document.getElementById('chat-container');
+        const input = document.getElementById('question-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        function addMessage(text, isUser, isThinking = false) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isUser ? 'user-message' : ''} ${isThinking ? 'thinking' : ''}`;
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.innerText = isUser ? '👤' : (isThinking ? '🤖⏳' : '🤖');
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            if (!isUser && !isThinking && text) {
+                bubble.innerHTML = marked.parse(text);
+            } else {
+                bubble.innerText = text;
+            }
+            msgDiv.appendChild(avatar);
+            msgDiv.appendChild(bubble);
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+            return msgDiv;
+        }
+
+        async function askQuestion(question) {
+            if (!question.trim()) return;
+            addMessage(question, true);
+            input.value = '';
+            const thinkingMsg = addMessage('正在思考...', false, true);
+            try {
+                const response = await fetch('/ai/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: `question=${encodeURIComponent(question)}`
+                });
+                const data = await response.json();
+                thinkingMsg.remove();
+                if (data.error) {
+                    addMessage(`❌ ${data.error}`, false);
+                } else {
+                    addMessage(data.answer, false);
+                }
+            } catch (e) {
+                thinkingMsg.remove();
+                addMessage('网络错误，请稍后重试。', false);
+            }
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        sendBtn.addEventListener('click', () => askQuestion(input.value));
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') askQuestion(input.value);
+        });
+        document.querySelectorAll('.example-chip').forEach(chip => {
+            chip.addEventListener('click', () => askQuestion(chip.dataset.q));
+        });
+    </script>
+</body>
+</html>

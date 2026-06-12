@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>搜索结果 - 旅游景点</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .back-link {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .search-form {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .search-form input {
+            width: 500px;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        .search-form button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            background: #ffd700;
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+        .result-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+        }
+        .result-card:hover {
+            transform: translateY(-5px);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+        }
+        .card-header h3 {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+        .rating {
+            display: inline-block;
+            background: #ffd700;
+            color: #333;
+            padding: 3px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+        .card-body {
+            padding: 20px;
+            line-height: 1.8;
+            color: #555;
+        }
+        .card-body p {
+            margin-bottom: 10px;
+        }
+        .label {
+            color: #667eea;
+            font-weight: bold;
+        }
+        .tag {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-right: 5px;
+            color: #666;
+        }
+        .no-result {
+            text-align: center;
+            color: white;
+            font-size: 20px;
+            padding: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← 返回全国地图</a>
+        <h1>🔍 搜索结果</h1>
+        <p class="subtitle">关键词："{{ query }}"，共找到 {{ count }} 个结果</p>
+
+        <div class="search-form">
+            <form action="/search/" method="get">
+                <input type="text" name="q" value="{{ query }}" placeholder="重新搜索...">
+                <button type="submit">搜索</button>
+            </form>
+        </div>
+
+        {% if results %}
+        <div class="result-grid">
+            {% for a in results %}
+            <div class="result-card">
+                <div class="card-header">
+                    <h3>{{ a.name }}</h3>
+                    {% if a.rating %}
+                    <span class="rating">⭐ {{ a.rating }} 分</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p><span class="label">📍 地址：</span>{{ a.address|default:"暂无" }}</p>
+                    <p><span class="label">🏙️ 城市：</span>{{ a.city|default:"暂无" }}</p>
+                    <p><span class="label">📞 电话：</span>{{ a.tel|default:"暂无" }}</p>
+                    <p><span class="label">🕐 开放时间：</span>{{ a.opentime|default:"暂无" }}</p>
+                    {% if a.keytag %}
+                    <p>
+                        <span class="label">🏷️ 标签：</span>
+                        {% for tag in a.keytag.split %}
+                        <span class="tag">{{ tag }}</span>
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-result">
+            😔 没有找到相关景点，试试其他关键词？
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

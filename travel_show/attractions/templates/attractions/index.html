@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>中国旅游大数据可视化平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #0b1121;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 16px 20px;
+        }
+
+        /* ===== 顶部 ===== */
+        .header {
+            text-align: center;
+            margin-bottom: 14px;
+        }
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #60a5fa, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        .header .sub-title {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        /* ===== 搜索 ===== */
+        .search-box {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .search-box form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(30, 41, 59, 0.5);
+            padding: 6px 6px 6px 20px;
+            border-radius: 50px;
+            border: 1px solid rgba(96, 165, 250, 0.12);
+        }
+        .search-box input {
+            width: 340px;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        .search-box input::placeholder { color: #475569; }
+        .search-box button {
+            border: none;
+            cursor: pointer;
+            padding: 10px 22px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white;
+            transition: all 0.2s;
+        }
+        .search-box button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+        }
+        .ai-btn {
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 50px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+            transition: all 0.2s;
+        }
+        .ai-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(236, 72, 153, 0.35);
+        }
+
+        /* ===== 统计卡片 ===== */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .stat-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.85));
+            border: 1px solid rgba(96, 165, 250, 0.08);
+            border-radius: 12px;
+            padding: 18px 10px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.25s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(96, 165, 250, 0.2);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+        }
+        .stat-card:nth-child(1)::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .stat-card:nth-child(2)::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+        .stat-card:nth-child(3)::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .stat-card:nth-child(4)::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+        .stat-icon { font-size: 22px; margin-bottom: 6px; }
+        .stat-number {
+            font-size: 26px;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 2px;
+            letter-spacing: -0.5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* ===== 主体：地图+侧边栏 ===== */
+        .main-layout {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .left-panel {
+            width: 230px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .panel-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(96, 165, 250, 0.08);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .panel-card h3 {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .rank-list { list-style: none; }
+        .rank-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .rank-item:hover { background: rgba(96, 165, 250, 0.08); }
+        .rank-num {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(96, 165, 250, 0.1);
+            color: #60a5fa;
+            flex-shrink: 0;
+        }
+        .rank-item:nth-child(1) .rank-num { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1e293b; }
+        .rank-item:nth-child(2) .rank-num { background: linear-gradient(135deg, #94a3b8, #64748b); color: #fff; }
+        .rank-item:nth-child(3) .rank-num { background: linear-gradient(135deg, #b45309, #d97706); color: #fff; }
+        .rank-name { flex: 1; font-weight: 500; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rank-value { font-size: 11px; color: #60a5fa; font-weight: 600; flex-shrink: 0; }
+
+        .map-wrapper { flex: 1; min-width: 0; }
+        #map {
+            width: 100%;
+            height: 500px;
+            border-radius: 12px;
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(96, 165, 250, 0.08);
+        }
+
+        /* ===== 图表区域 ===== */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .chart-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(96, 165, 250, 0.08);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .chart-card h3 {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .chart-box { width: 100%; height: 260px; }
+
+        /* ===== 图片墙 ===== */
+        .image-wall-section { margin-bottom: 16px; }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .section-header h3 {
+            font-size: 15px;
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .image-item {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16/10;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(96, 165, 250, 0.08);
+            background: rgba(30, 41, 59, 0.4);
+        }
+        .image-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+            border-color: rgba(96, 165, 250, 0.2);
+        }
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s;
+        }
+        .image-item:hover img { transform: scale(1.08); }
+        .image-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 12px 10px;
+            background: linear-gradient(transparent, rgba(11, 17, 33, 0.92));
+        }
+        .image-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .image-location {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .image-rating {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: #1e293b;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* ===== AI悬浮 ===== */
+        .ai-float {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+        }
+        .ai-float-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+            border: none;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ai-float-btn:hover {
+            transform: scale(1.08) rotate(5deg);
+            box-shadow: 0 8px 28px rgba(236, 72, 153, 0.55);
+        }
+        .ai-chat-panel {
+            position: absolute;
+            bottom: 64px;
+            right: 0;
+            width: 340px;
+            height: 440px;
+            background: linear-gradient(180deg, #1e293b, #0f172a);
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            border-radius: 16px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .ai-chat-panel.active { display: flex; }
+        .ai-chat-header {
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .ai-chat-body {
+            flex: 1;
+            padding: 14px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .ai-message {
+            background: rgba(96, 165, 250, 0.08);
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            border-radius: 10px 10px 10px 4px;
+            padding: 10px 12px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            max-width: 88%;
+            align-self: flex-start;
+        }
+        .user-message {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border-radius: 10px 10px 4px 10px;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: white;
+            max-width: 88%;
+            align-self: flex-end;
+        }
+        .ai-chat-input {
+            padding: 10px 12px;
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid rgba(96, 165, 250, 0.08);
+        }
+        .ai-chat-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            color: #e2e8f0;
+            font-size: 12px;
+            outline: none;
+        }
+        .ai-chat-input button {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ===== 页脚 ===== */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #475569;
+            font-size: 12px;
+            border-top: 1px solid rgba(96, 165, 250, 0.06);
+        }
+
+        /* 响应式 */
+        @media(max-width: 1200px) {
+            .main-layout { flex-direction: column; }
+            .left-panel { width: 100%; flex-direction: row; }
+            .panel-card { flex: 1; }
+            .charts-row { grid-template-columns: 1fr; }
+            .image-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media(max-width: 768px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .image-grid { grid-template-columns: 1fr; }
+            .search-box input { width: 200px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 顶部 -->
+    <div class="header">
+        <h1>中国旅游大数据可视化平台</h1>
+        <div class="sub-title">探索全国热门景区 · AI智能推荐 · 数据分析</div>
+    </div>
+
+    <!-- 搜索 -->
+    <div class="search-box">
+        <form action="/search/" method="get">
+            <input type="text" name="q" placeholder="搜索景点、城市、省份..." required>
+            <button type="submit">搜索</button>
+            <a href="/ai/" class="ai-btn">🤖 AI智能问答</a>
+        </form>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon">🏔️</div>
+            <div class="stat-number">{{ total_attractions|default:"0" }}</div>
+            <div class="stat-label">景点总数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🗺️</div>
+            <div class="stat-number">{{ total_provinces|default:"0" }}</div>
+            <div class="stat-label">覆盖省份</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🏙️</div>
+            <div class="stat-number">{{ total_cities|default:"0" }}</div>
+            <div class="stat-label">覆盖城市</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-number">{{ high_rated|default:"0" }}</div>
+            <div class="stat-label">高评分景区(4.5+)</div>
+        </div>
+    </div>
+
+    <!-- 地图+侧边栏 -->
+    <div class="main-layout">
+        <div class="left-panel">
+            <!-- 热门省份 -->
+            <div class="panel-card">
+                <h3>🔥 热门省份 TOP10</h3>
+                <ul class="rank-list">
+                    {% for p in hot_provinces %}
+                    <li class="rank-item" onclick="location.href='/province/{{ p.province }}/'">
+                        <span class="rank-num">{{ forloop.counter }}</span>
+                        <span class="rank-name">{{ p.province }}</span>
+                        <span class="rank-value">{{ p.count }}个</span>
+                    </li>
+                    {% empty %}
+                    <li class="rank-item"><span class="rank-name">暂无数据</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- 热门景点（替代城市） -->
+            <div class="panel-card">
+                <h3>⭐ 热门景点 TOP8</h3>
+                <ul class="rank-list">
+                    {% for a in hot_attractions_list %}
+                    <li class="rank-item" onclick="location.href='/search/?q={{ a.name|urlencode }}'">
+                        <span class="rank-num">{{ forloop.counter }}</span>
+                        <span class="rank-name" style="max-width:120px;">{{ a.name|truncatechars:8 }}</span>
+                        <span class="rank-value">⭐{{ a.rating }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="rank-item"><span class="rank-name">暂无数据</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- 地图 -->
+        <div class="map-wrapper">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- 图表 -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <h3>📊 景点类型占比</h3>
+            <div id="typeChart" class="chart-box"></div>
+        </div>
+        <div class="chart-card">
+            <h3>📈 热门省份景点数量</h3>
+            <div id="provinceChart" class="chart-box"></div>
+        </div>
+    </div>
+
+    <!-- 图片墙 -->
+    <div class="image-wall-section">
+        <div class="section-header">
+            <h3>📸 热门景点推荐</h3>
+        </div>
+        <div class="image-grid">
+            {% for item in image_wall %}
+            <div class="image-item" onclick="location.href='/search/?q={{ item.name|urlencode }}'">
+                <img src="{{ item.image }}" alt="{{ item.name }}" onerror="this.parentElement.style.display='none'">
+                <div class="image-rating">⭐ {{ item.rating }}</div>
+                <div class="image-overlay">
+                    <div class="image-name">{{ item.name }}</div>
+                    <div class="image-location">📍 {{ item.city }} {{ item.province }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="image-item" style="display:flex;align-items:center;justify-content:center;background:rgba(30,41,59,0.5);">
+                <span style="color:#475569;font-size:13px;">暂无图片数据</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>中国旅游大数据可视化平台 · 基于高德地图数据 · Django + ECharts</p>
+    </div>
+</div>
+
+<!-- AI悬浮 -->
+<div class="ai-float">
+    <div class="ai-chat-panel" id="aiChatPanel">
+        <div class="ai-chat-header">
+            <span>🤖 AI旅游助手</span>
+            <span style="cursor:pointer;" onclick="toggleAI()">✕</span>
+        </div>
+        <div class="ai-chat-body" id="aiChatBody">
+            <div class="ai-message">
+                你好！我是AI旅游助手 🌍<br>
+                可以问我景点推荐、路线规划、美食攻略等
+            </div>
+        </div>
+        <div class="ai-chat-input">
+            <input type="text" id="aiInput" placeholder="输入问题..." onkeypress="if(event.key==='Enter')sendAI()">
+            <button onclick="sendAI()">发送</button>
+        </div>
+    </div>
+    <button class="ai-float-btn" onclick="toggleAI()">🤖</button>
+</div>
+
+<!-- 隐藏的 JSON 数据 -->
+{{ map_data|json_script:"map-data" }}
+{{ type_stats|json_script:"type-data" }}
+
+<script>
+// 地图
+var chart = echarts.init(document.getElementById('map'));
+
+// 从 Django 安全获取数据
+var mapData = JSON.parse(document.getElementById('map-data').textContent);
+var typeData = JSON.parse(document.getElementById('type-data').textContent);
+
+fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json')
+.then(r => r.json())
+.then(geoJson => {
+    // 修改地图省份名称为完整名称，匹配数据库
+    var features = geoJson.features;
+    var nameMap = {
+        '北京': '北京市', '天津': '天津市', '上海': '上海市', '重庆': '重庆市',
+        '河北': '河北省', '山西': '山西省', '辽宁': '辽宁省', '吉林': '吉林省',
+        '黑龙江': '黑龙江省', '江苏': '江苏省', '浙江': '浙江省', '安徽': '安徽省',
+        '福建': '福建省', '江西': '江西省', '山东': '山东省', '河南': '河南省',
+        '湖北': '湖北省', '湖南': '湖南省', '广东': '广东省', '海南': '海南省',
+        '四川': '四川省', '贵州': '贵州省', '云南': '云南省', '陕西': '陕西省',
+        '甘肃': '甘肃省', '青海': '青海省', '台湾': '台湾省',
+        '内蒙古': '内蒙古自治区', '广西': '广西壮族自治区', '西藏': '西藏自治区',
+        '宁夏': '宁夏回族自治区', '新疆': '新疆维吾尔自治区',
+        '香港': '香港特别行政区', '澳门': '澳门特别行政区'
+    };
+    for (var i = 0; i < features.length; i++) {
+        var name = features[i].properties.name;
+        if (nameMap[name]) {
+            features[i].properties.name = nameMap[name];
+        }
+    }
+
+    echarts.registerMap('china', geoJson);
+
+    // 计算最大值用于 visualMap
+    var maxValue = 0;
+    for (var i = 0; i < mapData.length; i++) {
+        if (mapData[i].value > maxValue) maxValue = mapData[i].value;
+    }
+
+    chart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: {
+            trigger: 'item',
+            backgroundColor: 'rgba(11, 17, 33, 0.95)',
+            borderColor: 'rgba(96, 165, 250, 0.2)',
+            textStyle: { color: '#e2e8f0', fontSize: 13 },
+            formatter: function(params) {
+                return '<b>' + params.name + '</b><br/>景点数量：' + (params.value || 0) + ' 个';
+            }
+        },
+        visualMap: {
+            min: 0,
+            max: maxValue || 5000,
+            left: 12,
+            bottom: 12,
+            text: ['多', '少'],
+            textStyle: { color: '#64748b', fontSize: 11 },
+            inRange: {
+                color: ['#1e293b', '#1e3a5f', '#1e4a7a', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd']
+            },
+            itemWidth: 16,
+            itemHeight: 120
+        },
+        geo: {
+            map: 'china',
+            roam: true,
+            zoom: 1.1,
+            label: { show: true, fontSize: 9, color: '#64748b' },
+            emphasis: {
+                label: { show: true, color: '#fff', fontSize: 12 },
+                itemStyle: {
+                    areaColor: '#f472b6',
+                    shadowBlur: 20,
+                    shadowColor: 'rgba(244, 114, 182, 0.4)'
+                }
+            },
+            itemStyle: {
+                areaColor: '#1e293b',
+                borderColor: 'rgba(96, 165, 250, 0.2)',
+                borderWidth: 1
+            }
+        },
+        series: [{
+            type: 'map',
+            geoIndex: 0,
+            data: mapData
+        }]
+    });
+
+    // 点击跳转省份详情
+    chart.on('click', function(params) {
+        window.location.href = '/province/' + encodeURIComponent(params.name) + '/';
+    });
+});
+window.addEventListener('resize', function() { chart.resize(); });
+
+// 饼图
+var typeChart = echarts.init(document.getElementById('typeChart'));
+typeChart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+        trigger: 'item',
+        backgroundColor: 'rgba(11, 17, 33, 0.95)',
+        borderColor: 'rgba(96, 165, 250, 0.2)',
+        textStyle: { color: '#e2e8f0' },
+        formatter: '{b}: {c}个 ({d}%)'
+    },
+    legend: {
+        orient: 'vertical',
+        right: '2%',
+        top: 'center',
+        textStyle: { color: '#64748b', fontSize: 11 },
+        itemWidth: 12,
+        itemHeight: 12,
+        itemGap: 8
+    },
+    series: [{
+        type: 'pie',
+        radius: ['42%', '68%'],
+        center: ['38%', '50%'],
+        avoidLabelOverlap: true,
+        itemStyle: {
+            borderRadius: 6,
+            borderColor: '#0b1121',
+            borderWidth: 2
+        },
+        label: {
+            show: true,
+            fontSize: 11,
+            color: '#94a3b8',
+            formatter: '{b}\n{d}%'
+        },
+        labelLine: {
+            length: 12,
+            length2: 8,
+            lineStyle: { color: 'rgba(148, 163, 184, 0.3)' }
+        },
+        data: typeData,
+        color: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#f97316', '#84cc16']
+    }]
+});
+
+// 柱状图
+var provinceChart = echarts.init(document.getElementById('provinceChart'));
+var provinceNames = [{% for p in hot_provinces %}'{{ p.province|slice:":4" }}',{% endfor %}];
+var provinceValues = [{% for p in hot_provinces %}{{ p.count }},{% endfor %}];
+provinceChart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(11, 17, 33, 0.95)',
+        borderColor: 'rgba(96, 165, 250, 0.2)',
+        textStyle: { color: '#e2e8f0' },
+        axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(59, 130, 246, 0.08)' } }
+    },
+    grid: { left: '2%', right: '4%', bottom: '2%', top: '8%', containLabel: true },
+    xAxis: {
+        type: 'category',
+        data: provinceNames,
+        axisLine: { lineStyle: { color: 'rgba(96, 165, 250, 0.1)' } },
+        axisLabel: { color: '#64748b', fontSize: 10, rotate: 30 },
+        axisTick: { show: false }
+    },
+    yAxis: {
+        type: 'value',
+        axisLine: { show: false },
+        axisLabel: { color: '#475569', fontSize: 10 },
+        splitLine: { lineStyle: { color: 'rgba(96, 165, 250, 0.06)' } }
+    },
+    series: [{
+        type: 'bar',
+        data: provinceValues,
+        barWidth: '45%',
+        itemStyle: {
+            borderRadius: [4, 4, 0, 0],
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#60a5fa' },
+                { offset: 1, color: '#2563eb' }
+            ])
+        },
+        emphasis: {
+            itemStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: '#93c5fd' },
+                    { offset: 1, color: '#3b82f6' }
+                ])
+            }
+        }
+    }]
+});
+window.addEventListener('resize', function() {
+    typeChart.resize();
+    provinceChart.resize();
+});
+
+// AI
+function toggleAI() {
+    document.getElementById('aiChatPanel').classList.toggle('active');
+}
+function sendAI() {
+    var input = document.getElementById('aiInput');
+    var body = document.getElementById('aiChatBody');
+    var q = input.value.trim();
+    if (!q) return;
+    var userDiv = document.createElement('div');
+    userDiv.className = 'user-message';
+    userDiv.textContent = q;
+    body.appendChild(userDiv);
+    input.value = '';
+    body.scrollTop = body.scrollHeight;
+    setTimeout(function() {
+        var aiDiv = document.createElement('div');
+        aiDiv.className = 'ai-message';
+        aiDiv.innerHTML = '正在思考... 🤔<br>点击"AI智能问答"进入完整对话';
+        body.appendChild(aiDiv);
+        body.scrollTop = body.scrollHeight;
+    }, 600);
+}
+</script>
+
+</body>
+</html>
