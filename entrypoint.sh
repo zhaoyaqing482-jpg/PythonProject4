@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+cd /app/travel_show
+
 # 收集静态文件
 python manage.py collectstatic --noinput
 
