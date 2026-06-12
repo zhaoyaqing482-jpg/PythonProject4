@@ -28,8 +28,29 @@ if not SECRET_KEY:
 # 调试模式：生产环境必须为 False
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# 允许的主机：从环境变量读取，逗号分隔，默认只允许 localhost
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# ============================================================
+# 允许的主机：修复 Railway 部署 400 错误的核心配置
+# ============================================================
+# 从环境变量读取，支持逗号分隔；同时自动添加 Railway 域名
+default_hosts = 'localhost,127.0.0.1'
+env_hosts = os.environ.get('ALLOWED_HOSTS', default_hosts)
+
+# 解析环境变量中的 hosts（去除空白）
+ALLOWED_HOSTS = [h.strip() for h in env_hosts.split(',') if h.strip()]
+
+# 自动检测并添加 Railway 域名（防止遗漏）
+railway_domain = os.environ.get('RAILWAY_STATIC_URL', '')
+if railway_domain:
+    # 提取域名部分
+    railway_domain = railway_domain.replace('https://', '').replace('http://', '').rstrip('/')
+    if railway_domain and railway_domain not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(railway_domain)
+
+# 兜底：如果环境变量没设置且列表为空，添加通用 Railway 通配符
+if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['']:
+    ALLOWED_HOSTS = ['*']  # 仅用于紧急调试，生产环境应尽快改为具体域名
+
+print(f"🌐 ALLOWED_HOSTS: {ALLOWED_HOSTS}")
 
 # 数据库配置：使用 Railway 提供的 DATABASE_URL（MySQL），本地回退到 SQLite
 DATABASES = {
@@ -52,6 +73,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # 静态文件服务（生产必需）
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -65,7 +87,7 @@ ROOT_URLCONF = 'travel_show.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],  # 全局模板目录
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -100,6 +122,14 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'   # `collectstatic` 会收集到这里
 # 本地静态文件目录（如果存在）
 if (BASE_DIR / 'static').exists():
     STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# WhiteNoise 配置（用于生产环境提供静态文件）
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# 安全头部（生产环境建议）
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # 默认主键类型
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
