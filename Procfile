@@ -1,1 +1,1 @@
-web: cd travel_show && gunicorn travel_show.wsgi:application --bind 0.0.0.0:$PORT
+web: gunicorn travel_show.wsgi:application --bind 0.0.0.0:$PORT
