@@ -1,3 +1,4 @@
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 from django.http import JsonResponse
 from .models import Attraction
@@ -208,6 +209,7 @@ def city_detail(request, city_name):
 
 
 # ========== AI 聊天视图（支持 AJAX） ==========
+@csrf_exempt
 def ai_chat(request):
     if request.method == 'POST':
         question = request.POST.get('question', '').strip()
